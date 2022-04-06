@@ -74,6 +74,31 @@ class User(db.Model):
             return False
 
 
+class Note(db.Model):
+    """ Note """
+
+    __tablename__ = "notes"
+
+    id = db.Column(db.Integer(),
+                   primary_key=True,
+                   autoincrement=True)
+    title = db.Column(db.String(100),
+                     nullable=False)
+    content = db.Column(db.Text(),
+                        nullable=False)
+    owner = db.Column(db.ForeignKey('users.username'),
+                        nullable=False)
+    user = db.relationship("User", backref="notes")
+
+
+    def __repr__(self):
+        """ Return user data """
+
+        n = self
+
+        return f"<title: {n.title} content: {n.content} owner: {n.owner}>"
+
+
 def connect_db(app):
     """Connect to database."""
 

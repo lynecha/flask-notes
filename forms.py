@@ -20,3 +20,16 @@ class LoginForm(FlaskForm):
 
 class CSRFProtectForm(FlaskForm):
     """Form for logging out users."""
+
+class AddNoteForm(FlaskForm):
+    """Form for adding notes."""
+
+    title = StringField("Title", validators=[InputRequired()])
+    content = TextAreaField("Content" ,validators=[InputRequired()])
+
+class UpdateNoteForm(FlaskForm):
+    """Form for updating notes."""
+
+    title = StringField("Title", validators=[InputRequired()])
+    content = TextAreaField("Content" ,validators=[InputRequired()])
+

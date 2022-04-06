@@ -7,6 +7,28 @@
 <h2>{{ user.last_name }}</h2>
 <h2>{{ user.email }}</h2>
 
+<div>
+  <ul>
+    {% for note in user.notes %}
+      <li><a href="/notes/{{note.id}}/update">{{note.title}}</a></li>
+
+      <form action="/notes/{{note.id}}/delete" method="POST">
+        {{ form.hidden_tag() }}
+        <button type="submit">Delete Note</button>
+      </form>
+    {% endfor %}
+  </ul>
+</div>
+
+<div>
+  <li><a href="/users/{{user.username}}/notes/add">Add more notes</a></li>
+</div>
+
+<form action="/users/{{user.username}}/delete" method="POST">
+  {{ form.hidden_tag() }}
+  <button type="submit">Delete User</button>
+</form>
+
 <form action="/logout" method="POST">
   {{ form.hidden_tag() }}
   <button type="submit">Log Out</button>

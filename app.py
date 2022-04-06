@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, redirect, flash, session
-from models import db,connect_db,User
-from forms import RegisterForm, LoginForm, CSRFProtectForm
+from models import db,connect_db,User, Note
+from forms import RegisterForm, LoginForm, CSRFProtectForm, AddNoteForm, UpdateNoteForm
 from flask_bcrypt import Bcrypt
 
 
@@ -89,12 +89,12 @@ def login():
 def show_user_page(username):
     """Hidden profile page for logged-in users only."""
 
-    if "username" not in session:
+    if "username" not in session and session["username"] != username:
         flash("You must be logged in to view!")
         return redirect("/")
 
     else:
-        user =  User.query.filter_by(username=username).one()
+        user = User.query.get_or_404(username)
         form = CSRFProtectForm()
 
         return render_template("user-page.html", form=form, user=user, title="You made it!")
@@ -104,12 +104,105 @@ def logout_user():
     """Log out user."""
     form = CSRFProtectForm()
 
-    print("LOGOUT**********")
-
     if form.validate_on_submit():
         session.pop("username")
 
-        print("INSIDE LOGOUT**********")
-
     return redirect("/login")
+
+@app.post("/users/<username>/delete")
+def delete_user(username):
+    """Delete user """
+
+    if "username" not in session:
+        flash("You must be logged in to view!")
+        return redirect("/")
+
+    form = CSRFProtectForm()
+
+
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=username).one()
+        if user.notes:
+            user_notes = user.notes
+            db.session.delete(user_notes)
+        db.session.delete(user)
+        db.session.commit()
+        session.pop("username")
+
+        return redirect("/")
+
+@app.route("/users/<username>/notes/add", methods=["GET","POST"])
+def add_notes(username):
+    """display add note page and add notes on submit """
+
+    if "username" not in session:
+        flash("You must be logged in to view!")
+        return redirect("/")
+
+    form = AddNoteForm()
+
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=username).one() 
+
+        title = form.title.data
+        content = form.content.data
+
+        new_note = Note(title=title,content=content,owner=user.username)
+        db.session.add(new_note)
+        db.session.commit()
+
+        return redirect(f"/users/{user.username}")
+
+
+    else:
+        return render_template("add-note.html",form=form,title="Add Notes")
+
+
+@app.route("/notes/<int:note_id>/update", methods=["GET", "POST"])
+def edit_notes(note_id):
+    """Display edit note form and make updates on submit """
+
+    if "username" not in session:
+        flash("You must be logged in to view!")
+        return redirect("/")
+
+    note = Note.query.get(note_id)
+    form = UpdateNoteForm(obj=note)
+
+    if form.validate_on_submit():
+
+        note.title = form.title.data
+        note.content = form.content.data
+
+        db.session.commit()
+
+        return redirect(f"/users/{note.owner}")
+
+    else:
+        return render_template("edit-note.html", form=form,title="Edit Note")
+
+@app.post("/notes/<int:note_id>/delete")
+def delete_note(note_id):
+    """Delete note """
+
+    note = Note.query.get_or_404(note_id)
+    if "username" not in session and session["username"] != note.owner:
+        flash("You must be logged in to view!")
+        return redirect("/")
+
+    form = CSRFProtectForm()
+
+
+    if form.validate_on_submit():
+        
+        username = note.owner
+        
+        db.session.delete(note)
+        db.session.commit()
+
+        return redirect(f"/users/{username}")
+
+
+    
+
 
